@@ -1,56 +1,83 @@
-# Welcome to your Expo app 👋
+# MartNow Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Customer-only React Native application built with Expo, TypeScript, and Expo Router. It connects to the existing MartNow backend; this repository intentionally contains no backend code, database logic, or server-side secrets.
 
-## Get started
+## Configure the mobile API URL
 
-1. Install dependencies
+1. Copy `.env.example` to `.env`:
 
-   ```bash
-   npm install
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+2. Find the **IPv4 Address** for the Wi-Fi adapter on the computer that runs the existing backend:
+
+   ```powershell
+   ipconfig
    ```
 
-2. Start the app
+3. Set the mobile environment variable using that address and the verified backend port (`5000`):
 
-   ```bash
-   npx expo start
+   ```env
+   EXPO_PUBLIC_API_URL=http://YOUR_COMPUTER_LAN_IP:5000
    ```
 
-In the output, you'll find options to open the app in a
+   Do not use `localhost` or `127.0.0.1`; on Expo Go those point to the Android phone itself. The `.env` file is ignored by Git and must never contain backend secrets.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Start the existing backend
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+In the **separately extracted/existing** MartNow web project's `backend` folder, keep its existing `.env` configuration and run:
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```powershell
+npm install
+npm run dev
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+The backend's `server.js` listens on `PORT` or port `5000` by default. Do not run database setup or migration commands just to start this mobile project. If PowerShell blocks `npm.ps1`, use `npm.cmd` instead.
 
-### Other setup steps
+## Start Expo Go development
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+From this `MartNow-Mobile` folder:
 
-## Learn more
+```powershell
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+If PowerShell blocks `npx.ps1`, use `npx.cmd expo start`. Install **Expo Go** on Android, make sure the phone and computer use the same Wi-Fi, then scan the QR code in Expo Go.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+The app opens on the live MartNow marketplace. Stores, products, cart, checkout, addresses, orders, and account data all come from the existing backend; no mock catalogue or fake orders are included.
 
-## Join the community
+## Customer app structure
 
-Join our community of developers creating universal apps.
+- `src/app/` contains thin Expo Router route files only.
+- `src/pages/market/` contains marketplace home, store search, login, and registration.
+- `src/pages/shop/` contains store, product, cart, and checkout screens.
+- `src/pages/customer/` contains account, security, addresses, orders, and order detail.
+- `src/components/{shared,market,shop,customer}/` contains reusable mobile UI.
+- `src/services/`, `src/store/`, `src/types/`, and `src/utils/` contain API, session, state, contracts, and domain helpers.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Validate before release
+
+```powershell
+npx tsc --noEmit
+npx expo lint
+npx expo-doctor
+npx expo export --platform android
+npx expo export --platform ios
+npx expo export --platform web
+```
+
+The development API currently uses plain HTTP on the trusted local Wi-Fi network. Android cleartext and iOS ATS development allowances are configured for that LAN backend. Use HTTPS and tighten those allowances before pointing production builds at an internet-hosted API.
+
+## If the phone cannot connect
+
+- First open `http://YOUR_COMPUTER_LAN_IP:5000/` in the phone browser. It should return `Node.js backend is running`.
+- Verify the computer and phone are on the same non-guest Wi-Fi. Turn off VPNs that isolate local-network traffic.
+- Ensure the backend is running and its configured port matches `.env`.
+- Allow Node.js/the backend port through Windows Defender Firewall for private networks. Do not expose the development backend publicly.
+- Restart Expo after changing `.env` so the `EXPO_PUBLIC_*` value is reloaded.
+- CORS is mainly a browser concern. Expo Go is a native client; if the browser test above fails, solve Wi-Fi/firewall/LAN reachability first. If you later run the Expo web app, add its browser origin to the backend `CORS_ORIGINS` allow-list.
+- `npx expo start --tunnel` can help Expo Go load the JavaScript bundle, but it does **not** tunnel the backend API. The API URL still needs to be reachable from the phone.
+
+## Architecture
+
+`src/app/` contains Expo Router routes, `src/components/` reusable UI, `src/services/` the API and secure token helpers, `src/hooks/` responsive helpers, `src/types/` API contracts, `src/constants/` environment configuration, and `src/utils/` domain utilities. See [docs/BACKEND_INTEGRATION.md](docs/BACKEND_INTEGRATION.md) for the inspected API contract and [docs/WEB_TO_MOBILE_MAP.md](docs/WEB_TO_MOBILE_MAP.md) for the customer-screen mapping.
