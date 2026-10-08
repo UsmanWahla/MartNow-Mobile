@@ -5,15 +5,39 @@ import { AppIcon } from './AppIcon';
 import { Body, Heading } from './Typography';
 import { colors, radius } from '@/constants/theme';
 
-export function ScreenHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: React.ReactNode }) {
+interface ScreenHeaderProps {
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+  fallbackHref?: string;
+}
+
+export function ScreenHeader({ title, subtitle, right, fallbackHref = '/' }: ScreenHeaderProps) {
+  const goBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace(fallbackHref as never);
+  };
+
   return (
     <View style={styles.root}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Go back" hitSlop={8} onPress={() => router.back()} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        hitSlop={8}
+        onPress={goBack}
+        style={({ pressed }) => [styles.back, pressed && styles.pressed]}
+      >
         <AppIcon name="chevron-back" size={22} color={colors.teal} />
       </Pressable>
       <View style={styles.copy}>
-        <Heading numberOfLines={1} style={styles.title}>{title}</Heading>
-        {subtitle ? <Body numberOfLines={1} style={styles.subtitle}>{subtitle}</Body> : null}
+        <Heading numberOfLines={1} style={styles.title}>
+          {title}
+        </Heading>
+        {subtitle ? (
+          <Body numberOfLines={1} style={styles.subtitle}>
+            {subtitle}
+          </Body>
+        ) : null}
       </View>
       <View style={styles.right}>{right}</View>
     </View>
@@ -22,7 +46,16 @@ export function ScreenHeader({ title, subtitle, right }: { title: string; subtit
 
 const styles = StyleSheet.create({
   root: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 11 },
-  back: { width: 42, height: 42, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  back: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   copy: { flex: 1 },
   title: { fontSize: 19 },
   subtitle: { marginTop: 1, fontSize: 12 },

@@ -9,6 +9,7 @@ Customer-only React Native application built with Expo, TypeScript, and Expo Rou
    ```powershell
    Copy-Item .env.example .env
    ```
+
 2. Find the **IPv4 Address** for the Wi-Fi adapter on the computer that runs the existing backend:
 
    ```powershell
@@ -60,13 +61,20 @@ The app opens on the live MartNow marketplace. Stores, products, cart, checkout,
 ```powershell
 npx tsc --noEmit
 npx expo lint
+npm test
+npm run format:check
 npx expo-doctor
 npx expo export --platform android
 npx expo export --platform ios
-npx expo export --platform web
 ```
 
-The development API currently uses plain HTTP on the trusted local Wi-Fi network. Android cleartext and iOS ATS development allowances are configured for that LAN backend. Use HTTPS and tighten those allowances before pointing production builds at an internet-hosted API.
+The development API currently uses plain HTTP on the trusted local Wi-Fi network. Set `MARTNOW_ALLOW_HTTP=true` only for a local development build. Production builds must use an HTTPS API URL and leave that flag unset.
+
+Before the first EAS build, set the final `android.package` and `ios.bundleIdentifier` in `app.json`, then run `npx eas-cli build:configure`. The included `eas.json` keeps preview and production environments separate. Production configuration fails early if the API URL is not HTTPS, development cleartext HTTP is enabled, or an Android map key is missing.
+
+## Maps in standalone builds
+
+Expo Go supplies its own Android Google Maps configuration. Before creating a standalone Android build, enable **Maps SDK for Android**, create an Android-restricted Google Maps API key, restrict it to the final Android package name and signing-certificate SHA-1, then set `GOOGLE_MAPS_ANDROID_API_KEY` in the build environment. The app uses Apple Maps on iOS, so this Android key is not required by the iOS build.
 
 ## If the phone cannot connect
 
@@ -75,7 +83,7 @@ The development API currently uses plain HTTP on the trusted local Wi-Fi network
 - Ensure the backend is running and its configured port matches `.env`.
 - Allow Node.js/the backend port through Windows Defender Firewall for private networks. Do not expose the development backend publicly.
 - Restart Expo after changing `.env` so the `EXPO_PUBLIC_*` value is reloaded.
-- CORS is mainly a browser concern. Expo Go is a native client; if the browser test above fails, solve Wi-Fi/firewall/LAN reachability first. If you later run the Expo web app, add its browser origin to the backend `CORS_ORIGINS` allow-list.
+- CORS is mainly a browser concern. Expo Go is a native client; if the browser test above fails, solve Wi-Fi/firewall/LAN reachability first.
 - `npx expo start --tunnel` can help Expo Go load the JavaScript bundle, but it does **not** tunnel the backend API. The API URL still needs to be reachable from the phone.
 
 ## Architecture

@@ -78,12 +78,16 @@ async function refreshAccessToken() {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), apiConfig.timeoutMs);
+
     try {
       const response = await fetch(buildUrl('/api/refresh'), {
         method: 'POST',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         credentials: 'include',
         body: '{}',
+        signal: controller.signal,
       });
       const payload = (await readResponse(response)) as RefreshPayload | null;
       if (!response.ok || typeof payload?.token !== 'string') return null;
@@ -92,6 +96,7 @@ async function refreshAccessToken() {
     } catch {
       return null;
     } finally {
+      clearTimeout(timeoutId);
       refreshPromise = null;
     }
   })();
@@ -127,7 +132,12 @@ async function request<T>(path: string, options: RequestOptions = {}, isRetry = 
     });
     const payload = await readResponse(response);
 
-    if (response.status === 401 && options.requiresAuth !== false && !isRetry && path !== '/api/logout') {
+    if (
+      response.status === 401 &&
+      options.requiresAuth !== false &&
+      !isRetry &&
+      path !== '/api/logout'
+    ) {
       const refreshedToken = await refreshAccessToken();
       if (refreshedToken) return request<T>(path, options, true);
       await clearAccessToken();

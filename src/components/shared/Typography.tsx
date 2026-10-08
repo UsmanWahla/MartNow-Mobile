@@ -18,12 +18,20 @@ export function Label({ style, ...props }: TextProps) {
 }
 
 export function Money({ style, children, ...props }: TextProps) {
-  return <Text style={[styles.money, style]} {...props}>{children}</Text>;
+  return (
+    <Text style={[styles.money, style]} {...props}>
+      {children}
+    </Text>
+  );
 }
 
 const styles = StyleSheet.create({
   heading: { color: colors.ink, fontFamily: 'Outfit_700Bold' },
   body: { color: colors.muted, fontFamily: 'Outfit_400Regular' },
   label: { color: colors.ink, fontFamily: 'Outfit_600SemiBold' },
-  money: { color: colors.ink, fontFamily: 'IBMPlexSans_600SemiBold', fontVariant: ['tabular-nums'] },
+  money: {
+    color: colors.ink,
+    fontFamily: 'IBMPlexSans_600SemiBold',
+    fontVariant: ['tabular-nums'],
+  },
 });

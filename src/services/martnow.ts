@@ -1,7 +1,6 @@
 import { apiConfig } from '@/constants/config';
 import type {
   AuthResponse,
-  BackendHealth,
   CustomerAddressesResponse,
   CustomerAddressInput,
   CustomerCheckoutProfile,
@@ -19,8 +18,7 @@ import type {
 
 import { api } from './api';
 
-export const BACKEND_HEALTH_ENDPOINT = '/';
-export const PUBLIC_STORES_ENDPOINT = '/api/stores/public';
+const PUBLIC_STORES_ENDPOINT = '/api/stores/public';
 
 function encoded(value: string | number) {
   return encodeURIComponent(String(value));
@@ -39,10 +37,6 @@ export function assetUrl(path: string | null | undefined) {
   return `${apiConfig.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
-export function checkBackendConnection() {
-  return api.get<BackendHealth>(BACKEND_HEALTH_ENDPOINT, { requiresAuth: false });
-}
-
 export function getPublicStores() {
   return api.get<PublicStoresResponse>(PUBLIC_STORES_ENDPOINT, { requiresAuth: false });
 }
@@ -51,7 +45,10 @@ export function getShopMeta(slug: string) {
   return api.get<ShopMeta>(`/api/shop/${encoded(slug)}`, { requiresAuth: false });
 }
 
-export function getShopProducts(slug: string, options: { all?: boolean; q?: string; page?: number; limit?: number } = {}) {
+export function getShopProducts(
+  slug: string,
+  options: { all?: boolean; q?: string; page?: number; limit?: number } = {},
+) {
   return api.get<ShopProductsResponse>(
     `/api/shop/${encoded(slug)}/products${query({ all: options.all, q: options.q, page: options.page, limit: options.limit })}`,
     { requiresAuth: false },
@@ -68,7 +65,12 @@ export function customerLogin(payload: { email: string; password: string }) {
   return api.post<AuthResponse>('/api/customer/login', payload, { requiresAuth: false });
 }
 
-export function customerSignup(payload: { name: string; email: string; password: string; phone?: string }) {
+export function customerSignup(payload: {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+}) {
   return api.post<AuthResponse>('/api/customer/signup', payload, { requiresAuth: false });
 }
 
@@ -93,11 +95,17 @@ export function getAddresses() {
 }
 
 export function createAddress(payload: CustomerAddressInput) {
-  return api.post<{ message: string; address: CustomerAddressesResponse['rows'][number] }>('/api/customer/addresses', payload);
+  return api.post<{ message: string; address: CustomerAddressesResponse['rows'][number] }>(
+    '/api/customer/addresses',
+    payload,
+  );
 }
 
 export function updateAddress(addressId: number, payload: CustomerAddressInput) {
-  return api.put<{ message: string; address: CustomerAddressesResponse['rows'][number] }>(`/api/customer/addresses/${encoded(addressId)}`, payload);
+  return api.put<{ message: string; address: CustomerAddressesResponse['rows'][number] }>(
+    `/api/customer/addresses/${encoded(addressId)}`,
+    payload,
+  );
 }
 
 export function deleteAddress(addressId: number) {
@@ -105,7 +113,10 @@ export function deleteAddress(addressId: number) {
 }
 
 export function setDefaultAddress(addressId: number) {
-  return api.put<{ message: string; address: CustomerAddressesResponse['rows'][number] }>(`/api/customer/addresses/${encoded(addressId)}/default`, {});
+  return api.put<{ message: string; address: CustomerAddressesResponse['rows'][number] }>(
+    `/api/customer/addresses/${encoded(addressId)}/default`,
+    {},
+  );
 }
 
 export async function searchLocations(value: string) {
@@ -126,7 +137,10 @@ export function getCart(slug: string) {
   return api.get<ShopCart>(`/api/shop/${encoded(slug)}/cart`);
 }
 
-export function addToCart(slug: string, payload: { product_id: number; quantity: number; color?: string; size?: string }) {
+export function addToCart(
+  slug: string,
+  payload: { product_id: number; quantity: number; color?: string; size?: string },
+) {
   return api.post<ShopCart>(`/api/shop/${encoded(slug)}/cart`, payload);
 }
 

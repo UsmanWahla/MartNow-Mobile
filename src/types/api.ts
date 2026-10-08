@@ -1,7 +1,3 @@
-export interface BackendHealth {
-  message: string;
-}
-
 export interface PublicStore {
   id: number;
   name: string;
@@ -236,6 +232,3 @@ export interface CustomerOrdersResponse {
   rows: ShopOrder[];
   total: number;
 }
-
-export type ConnectionStatus = 'checking' | 'connected' | 'failed';
-export type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed';

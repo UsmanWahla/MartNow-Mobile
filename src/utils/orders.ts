@@ -15,4 +15,11 @@ export function orderStatusLabel(order: Pick<ShopOrder, 'delivery_status' | 'pay
   return 'Pending';
 }
 
-export const ORDER_FILTERS = ['all', 'pending', 'processing', 'dispatched', 'delivered', 'cancelled'] as const;
+export const ORDER_FILTERS = [
+  'all',
+  'pending',
+  'processing',
+  'dispatched',
+  'delivered',
+  'cancelled',
+] as const;

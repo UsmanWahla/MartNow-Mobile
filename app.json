@@ -3,28 +3,29 @@
     "name": "MartNow Mobile",
     "slug": "martnow-mobile",
     "version": "1.0.0",
+    "platforms": ["ios", "android"],
     "orientation": "default",
     "icon": "./assets/images/martnow-app-icon.png",
     "scheme": "martnow",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#F6FAF8",
+    "androidStatusBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#F6FAF8",
+      "hidden": false
+    },
     "ios": {
       "icon": "./assets/images/martnow-app-icon.png",
-      "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
-        }
-      }
+      "buildNumber": "1"
     },
     "android": {
+      "versionCode": 1,
+      "backgroundColor": "#F6FAF8",
       "adaptiveIcon": {
         "backgroundColor": "#0B1F1C",
         "foregroundImage": "./assets/images/martnow-app-icon.png"
       },
       "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "output": "single",
-      "favicon": "./assets/images/martnow-app-icon.png"
     },
     "plugins": [
       "expo-router",
@@ -41,14 +42,6 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Allow MartNow to use your location when selecting a delivery address."
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "usesCleartextTraffic": true
-          }
         }
       ]
     ],

@@ -6,6 +6,5 @@ function normalizeBaseUrl(value: string) {
 
 export const apiConfig = {
   baseUrl: rawApiUrl ? normalizeBaseUrl(rawApiUrl) : '',
-  displayUrl: rawApiUrl ? normalizeBaseUrl(rawApiUrl) : 'Not configured',
   timeoutMs: 15_000,
 } as const;

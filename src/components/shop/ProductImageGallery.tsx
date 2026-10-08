@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import {
   FlatList,
@@ -45,14 +45,7 @@ interface GallerySlideProps {
   onExpand: (index: number) => void;
 }
 
-function GallerySlide({
-  image,
-  index,
-  total,
-  width,
-  productName,
-  onExpand,
-}: GallerySlideProps) {
+function GallerySlide({ image, index, total, width, productName, onExpand }: GallerySlideProps) {
   const [failed, setFailed] = useState(false);
 
   return (
@@ -226,7 +219,10 @@ export function ProductImageGallery({
             windowSize={3}
           />
         ) : (
-          <View accessibilityLabel={`${productName}, no product image`} style={styles.imageFallback}>
+          <View
+            accessibilityLabel={`${productName}, no product image`}
+            style={styles.imageFallback}
+          >
             <View style={styles.fallbackMark}>
               <Text style={styles.fallbackMarkText}>M</Text>
             </View>
@@ -506,5 +502,3 @@ const styles = StyleSheet.create({
     opacity: 0.62,
   },
 });
-
-export default ProductImageGallery;

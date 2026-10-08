@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/immutability -- Reanimated shared values are intentionally mutable UI-thread state. */
 import { useCallback, useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -431,5 +431,3 @@ const styles = StyleSheet.create({
     opacity: 0.58,
   },
 });
-
-export default ImageZoomModal;

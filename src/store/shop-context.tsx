@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { getCart } from '@/services/martnow';
 import { deleteStoredValue, getStoredValue, setStoredValue } from '@/services/storage';
 import { useAuth } from '@/store/auth-context';
+import { cartItemCount } from '@/utils/cart';
 
 export interface CartShop {
   slug: string;
@@ -29,14 +30,16 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    getStoredValue(SHOP_KEY).then((value) => {
-      if (!value) return;
-      try {
-        setCartShopState(JSON.parse(value) as CartShop);
-      } catch {
-        void deleteStoredValue(SHOP_KEY);
-      }
-    }).finally(() => setIsReady(true));
+    getStoredValue(SHOP_KEY)
+      .then((value) => {
+        if (!value) return;
+        try {
+          setCartShopState(JSON.parse(value) as CartShop);
+        } catch {
+          void deleteStoredValue(SHOP_KEY);
+        }
+      })
+      .finally(() => setIsReady(true));
   }, []);
 
   const setCartShop = useCallback(async (shop: CartShop) => {
@@ -57,9 +60,10 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       const cart = await getCart(cartShop.slug);
-      setCartCount(cart.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0));
+      setCartCount(cartItemCount(cart.items));
     } catch {
-      setCartCount(0);
+      // Keep the last known badge during a temporary network failure. Authentication
+      // changes and an explicit cart clear still reset it to zero.
     }
   }, [cartShop, isAuthenticated]);
 
@@ -72,7 +76,10 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     void refreshCart();
   }, [authReady, clearCart, isAuthenticated, isReady, refreshCart]);
 
-  const value = useMemo(() => ({ cartShop, cartCount, isReady, setCartShop, setCartCount, refreshCart, clearCart }), [cartCount, cartShop, clearCart, isReady, refreshCart, setCartShop]);
+  const value = useMemo(
+    () => ({ cartShop, cartCount, isReady, setCartShop, setCartCount, refreshCart, clearCart }),
+    [cartCount, cartShop, clearCart, isReady, refreshCart, setCartShop],
+  );
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
 }
 
@@ -80,10 +87,4 @@ export function useCartShop() {
   const context = useContext(ShopContext);
   if (!context) throw new Error('useCartShop must be used inside ShopProvider.');
   return context;
-}
-
-/** @deprecated Use useCartShop. Kept temporarily for route compatibility. */
-export function useActiveShop() {
-  const context = useCartShop();
-  return { activeShop: context.cartShop, setActiveShop: context.setCartShop };
 }

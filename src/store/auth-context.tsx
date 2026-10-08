@@ -12,7 +12,12 @@ interface AuthContextValue {
   isReady: boolean;
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (payload: { name: string; email: string; password: string; phone?: string }) => Promise<void>;
+  signUp: (payload: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+  }) => Promise<void>;
   updateCustomer: (customer: CustomerUser) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -51,15 +56,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCustomer(user);
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const response = await customerLogin({ email, password });
-    await persistSession(response.token, response.user);
-  }, [persistSession]);
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      const response = await customerLogin({ email, password });
+      await persistSession(response.token, response.user);
+    },
+    [persistSession],
+  );
 
-  const signUp = useCallback(async (payload: { name: string; email: string; password: string; phone?: string }) => {
-    const response = await customerSignup(payload);
-    await persistSession(response.token, response.user);
-  }, [persistSession]);
+  const signUp = useCallback(
+    async (payload: { name: string; email: string; password: string; phone?: string }) => {
+      const response = await customerSignup(payload);
+      await persistSession(response.token, response.user);
+    },
+    [persistSession],
+  );
 
   const updateCustomer = useCallback(async (nextCustomer: CustomerUser) => {
     await storeCustomer(nextCustomer);

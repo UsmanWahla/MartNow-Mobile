@@ -20,7 +20,7 @@ Customer authentication uses:
 - `POST /api/refresh`
 - `POST /api/logout`
 
-Login and signup return `{ message, token, user }`. The app stores the access token in Expo SecureStore on iOS/Android and browser local storage on web. Requests send `Authorization: Bearer <token>` and credentials. A `401` triggers one refresh attempt, saves the rotated access token, retries the original request, and clears the local customer session if refresh fails.
+Login and signup return `{ message, token, user }`. The app stores the access token in Expo SecureStore. Requests send `Authorization: Bearer <token>` and credentials. A `401` triggers one refresh attempt, saves the rotated access token, retries the original request, and clears the local customer session if refresh fails.
 
 The refresh token is HTTP-only and cookie-based. Its persistence must be part of physical-device release testing because native cookie behavior belongs to the platform networking layer.
 
@@ -67,4 +67,4 @@ The current backend exposes no wishlist, reviews, coupons, or push-notification 
 
 ## Assets and errors
 
-Uploaded store/product images are served from `/uploads/...`. API service errors use `{ message }`; the client converts those into loading, empty, retry, toast, or confirmation states that also work on React Native Web.
+Uploaded store/product images are served from `/uploads/...`. API service errors use `{ message }`; the client converts those into native loading, empty, retry, toast, or confirmation states.
