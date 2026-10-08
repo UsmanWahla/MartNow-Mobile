@@ -8,7 +8,7 @@ import { useCartShop } from '@/store/shop-context';
 const icons: Record<string, { active: IconName; inactive: IconName }> = {
   index: { active: 'home', inactive: 'home-outline' },
   market: { active: 'search', inactive: 'search-outline' },
-  cart: { active: 'bag-handle', inactive: 'bag-handle-outline' },
+  cart: { active: 'cart', inactive: 'cart-outline' },
   orders: { active: 'receipt', inactive: 'receipt-outline' },
   account: { active: 'person-circle', inactive: 'person-circle-outline' },
 };

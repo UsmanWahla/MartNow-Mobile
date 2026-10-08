@@ -58,7 +58,7 @@ export default function MarketHome() {
           </Body>
         </View>
         <Pressable onPress={() => router.push('/(tabs)/market')}>
-          <Label style={styles.seeAll}>Search all</Label>
+          <Label style={styles.seeAll}>See all</Label>
         </Pressable>
       </View>
       {error ? (

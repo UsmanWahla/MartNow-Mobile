@@ -70,11 +70,13 @@ npx expo export --platform ios
 
 The development API currently uses plain HTTP on the trusted local Wi-Fi network. Set `MARTNOW_ALLOW_HTTP=true` only for a local development build. Production builds must use an HTTPS API URL and leave that flag unset.
 
-Before the first EAS build, set the final `android.package` and `ios.bundleIdentifier` in `app.json`, then run `npx eas-cli build:configure`. The included `eas.json` keeps preview and production environments separate. Production configuration fails early if the API URL is not HTTPS, development cleartext HTTP is enabled, or an Android map key is missing.
+Before the first EAS build, set the final `android.package` and `ios.bundleIdentifier` in `app.json`, then run `npx eas-cli build:configure`. The included `eas.json` keeps preview and production environments separate. Production configuration fails early if the API URL is not HTTPS or development cleartext HTTP is enabled.
 
-## Maps in standalone builds
+## Maps
 
-Expo Go supplies its own Android Google Maps configuration. Before creating a standalone Android build, enable **Maps SDK for Android**, create an Android-restricted Google Maps API key, restrict it to the final Android package name and signing-certificate SHA-1, then set `GOOGLE_MAPS_ANDROID_API_KEY` in the build environment. The app uses Apple Maps on iOS, so this Android key is not required by the iOS build.
+The customer address picker uses native MapLibre with the same OpenStreetMap raster tiles as the web frontend. It needs a custom Expo development, preview, or production build; it cannot run inside Expo Go. No Google Maps API key or billing account is required.
+
+OpenStreetMap attribution is visible in the map. The public OSM tile service is suitable for normal interactive use only; do not add offline downloads or tile prefetching. Before a high-traffic production release, use an OSM-compatible managed tile provider or self-hosted tiles.
 
 ## If the phone cannot connect
 

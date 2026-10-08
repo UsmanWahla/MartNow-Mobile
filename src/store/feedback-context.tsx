@@ -21,7 +21,9 @@ interface ConfirmOptions {
   title: string;
   message: string;
   confirmLabel?: string;
+  cancelLabel?: string;
   destructive?: boolean;
+  success?: boolean;
 }
 
 interface FeedbackContextValue {
@@ -85,6 +87,16 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
       : toast?.tone === 'success'
         ? 'checkmark-circle'
         : 'information-circle';
+  const dialogIcon = confirmState?.destructive
+    ? 'trash-outline'
+    : confirmState?.success
+      ? 'checkmark-circle'
+      : 'help-circle-outline';
+  const dialogIconColor = confirmState?.destructive
+    ? colors.danger
+    : confirmState?.success
+      ? colors.success
+      : colors.teal;
 
   return (
     <FeedbackContext.Provider value={value}>
@@ -117,12 +129,14 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
       >
         <View style={styles.backdrop}>
           <View style={styles.dialog}>
-            <View style={[styles.dialogIcon, confirmState?.destructive && styles.dialogIconDanger]}>
-              <AppIcon
-                name={confirmState?.destructive ? 'trash-outline' : 'help-circle-outline'}
-                size={26}
-                color={confirmState?.destructive ? colors.danger : colors.teal}
-              />
+            <View
+              style={[
+                styles.dialogIcon,
+                confirmState?.destructive && styles.dialogIconDanger,
+                confirmState?.success && styles.dialogIconSuccess,
+              ]}
+            >
+              <AppIcon name={dialogIcon} size={26} color={dialogIconColor} />
             </View>
             <Heading style={styles.dialogTitle}>{confirmState?.title}</Heading>
             <Body style={styles.dialogMessage}>{confirmState?.message}</Body>
@@ -135,7 +149,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
                   pressed && styles.pressed,
                 ]}
               >
-                <Label style={styles.cancelText}>Cancel</Label>
+                <Label style={styles.cancelText}>{confirmState?.cancelLabel || 'Cancel'}</Label>
               </Pressable>
               <Pressable
                 onPress={() => settle(true)}
@@ -205,6 +219,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tealSoft,
   },
   dialogIconDanger: { backgroundColor: colors.dangerSoft },
+  dialogIconSuccess: { backgroundColor: colors.successSoft },
   dialogTitle: { marginTop: 13, fontSize: 20, textAlign: 'center' },
   dialogMessage: { marginTop: 7, fontSize: 14, lineHeight: 20, textAlign: 'center' },
   dialogActions: { width: '100%', flexDirection: 'row', gap: 10, marginTop: 20 },

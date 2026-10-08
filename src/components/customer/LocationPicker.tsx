@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ComponentType } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import * as Location from 'expo-location';
-import MapView, { Marker, type LatLng } from 'react-native-maps';
+import Constants, { AppOwnership } from 'expo-constants';
 
 import type { LocationPickerProps } from './LocationPicker.types';
+import type { OpenStreetMapProps } from './OpenStreetMap';
 import { AppIcon } from '@/components/shared/AppIcon';
 import { Body, Label } from '@/components/shared/Typography';
 import { colors, radius } from '@/constants/theme';
@@ -11,12 +13,41 @@ import { reverseLocation, searchLocations } from '@/services/martnow';
 import type { StoreLocationResult } from '@/types/api';
 import { getErrorMessage } from '@/utils/error-message';
 
-const MAP_DELTA = 0.012;
+const isExpoGo = Constants.appOwnership === AppOwnership.Expo;
 const formatCoordinate = (value: number) => String(Math.round(value * 10_000_000) / 10_000_000);
 
 function parseCoordinate(value: string, minimum: number, maximum: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= minimum && parsed <= maximum ? parsed : null;
+}
+
+function DeliveryMap({ latitude, longitude, onMapError, onPick }: OpenStreetMapProps) {
+  if (isExpoGo) {
+    return (
+      <View style={styles.mapUnavailable}>
+        <AppIcon name="phone-portrait-outline" size={28} color={colors.teal} />
+        <Label style={styles.mapUnavailableTitle}>Map needs the MartNow Dev Build</Label>
+        <Body style={styles.mapUnavailableText}>
+          OpenStreetMap is available after installing the custom development build. You can still
+          search or use your current location here.
+        </Body>
+      </View>
+    );
+  }
+
+  // MapLibre is imported only in a custom native build. Expo Go has no MapLibre
+  // native module and must never evaluate this import.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const NativeOpenStreetMap = require('./OpenStreetMap')
+    .default as ComponentType<OpenStreetMapProps>;
+  return (
+    <NativeOpenStreetMap
+      latitude={latitude}
+      longitude={longitude}
+      onMapError={onMapError}
+      onPick={onPick}
+    />
+  );
 }
 
 export default function LocationPicker({
@@ -34,13 +65,11 @@ export default function LocationPicker({
   const requestId = useRef(0);
   const latitude = parseCoordinate(value.latitude, -90, 90);
   const longitude = parseCoordinate(value.longitude, -180, 180);
-  const region = useMemo(
-    () =>
-      latitude != null && longitude != null
-        ? { latitude, longitude, latitudeDelta: MAP_DELTA, longitudeDelta: MAP_DELTA }
-        : null,
-    [latitude, longitude],
-  );
+  const hasPlaceholderCoordinates = latitude === 0 && longitude === 0;
+  const region =
+    latitude != null && longitude != null && !hasPlaceholderCoordinates
+      ? { latitude, longitude }
+      : null;
 
   useEffect(() => {
     setQuery(value.address);
@@ -80,7 +109,7 @@ export default function LocationPicker({
     });
   };
 
-  const savePin = (coordinate: LatLng) => {
+  const savePin = (coordinate: { latitude: number; longitude: number }) => {
     onChange({
       ...value,
       latitude: formatCoordinate(coordinate.latitude),
@@ -88,7 +117,7 @@ export default function LocationPicker({
     });
   };
 
-  const resolvePin = async (coordinate: LatLng) => {
+  const resolvePin = async (coordinate: { latitude: number; longitude: number }) => {
     const currentRequest = ++requestId.current;
     savePin(coordinate);
     setResults([]);
@@ -268,30 +297,26 @@ export default function LocationPicker({
           </Pressable>
         ) : null}
         <Body style={styles.hint}>
-          {region ? 'Tap the map to move the pin.' : 'Search or use GPS to show the map.'}
+          {region
+            ? isExpoGo
+              ? 'Install the MartNow Dev Build to move the pin on the map.'
+              : 'Tap the map to move the pin.'
+            : 'Search or use GPS to show the map.'}
         </Body>
       </View>
 
       {region ? (
         <View style={styles.mapFrame}>
-          <MapView
-            key={`${region.latitude}-${region.longitude}`}
-            initialRegion={region}
-            onPress={(event) => {
-              void resolvePin(event.nativeEvent.coordinate);
+          <DeliveryMap
+            latitude={region.latitude}
+            longitude={region.longitude}
+            onMapError={() => {
+              setMessage('The map could not load. Check your internet connection and try again.');
             }}
-            showsUserLocation={locationGranted}
-            showsMyLocationButton={locationGranted}
-            style={styles.map}
-          >
-            <Marker
-              coordinate={{ latitude: region.latitude, longitude: region.longitude }}
-              draggable
-              onDragEnd={(event) => {
-                void resolvePin(event.nativeEvent.coordinate);
-              }}
-            />
-          </MapView>
+            onPick={(coordinate) => {
+              void resolvePin(coordinate);
+            }}
+          />
         </View>
       ) : (
         <View style={styles.mapEmpty}>
@@ -303,8 +328,8 @@ export default function LocationPicker({
       )}
 
       <View style={styles.coords}>
-        <Body style={styles.coord}>Lat: {latitude ?? 'Not set'}</Body>
-        <Body style={styles.coord}>Lng: {longitude ?? 'Not set'}</Body>
+        <Body style={styles.coord}>Lat: {region?.latitude ?? 'Not set'}</Body>
+        <Body style={styles.coord}>Lng: {region?.longitude ?? 'Not set'}</Body>
       </View>
       {message ? <Body style={styles.message}>{message}</Body> : null}
     </View>
@@ -379,12 +404,22 @@ const styles = StyleSheet.create({
   settingsText: { color: colors.teal, fontSize: 11 },
   hint: { flexShrink: 1, fontSize: 10 },
   mapFrame: {
+    position: 'relative',
     height: 230,
     overflow: 'hidden',
     borderRadius: radius.md,
     backgroundColor: '#EAF3EF',
   },
-  map: { width: '100%', height: '100%' },
+  mapUnavailable: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    padding: 24,
+    backgroundColor: colors.tealSoft,
+  },
+  mapUnavailableTitle: { color: colors.teal, fontSize: 13 },
+  mapUnavailableText: { maxWidth: 300, textAlign: 'center', fontSize: 11, lineHeight: 16 },
   mapEmpty: {
     height: 230,
     alignItems: 'center',

@@ -5,12 +5,13 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Page } from '@/components/shared/Page';
 import { ScreenHeader } from '@/components/shared/ScreenHeader';
 import { Body, Heading, Label, Money } from '@/components/shared/Typography';
+import { CartIconButton } from '@/components/shop/CartIconButton';
 import { ProductImageGallery } from '@/components/shop/ProductImageGallery';
 import { QuantityStepper } from '@/components/shop/QuantityStepper';
 import { Button, ErrorState, LoadingState } from '@/components/ui';
 import { colors, radius } from '@/constants/theme';
 import { useResponsive } from '@/hooks/use-responsive';
-import { addToCart, getShopProduct } from '@/services/martnow';
+import { addToCart, getCart, getShopProduct } from '@/services/martnow';
 import { useAuth } from '@/store/auth-context';
 import { useFeedback } from '@/store/feedback-context';
 import { useCartShop } from '@/store/shop-context';
@@ -28,8 +29,8 @@ export default function ShopProduct() {
   const productId = firstRouteParam(params.productId);
   const { tablet } = useResponsive();
   const { isAuthenticated } = useAuth();
-  const { showToast } = useFeedback();
-  const { setCartShop, setCartCount } = useCartShop();
+  const { showToast, confirm } = useFeedback();
+  const { cartShop, setCartShop, setCartCount } = useCartShop();
   const [product, setProduct] = useState<Product | null>(null);
   const [shopName, setShopName] = useState('Store');
   const [color, setColor] = useState('');
@@ -120,19 +121,53 @@ export default function ShopProduct() {
     }
     addingRef.current = true;
     setAdding(true);
+    let wasAdded = false;
     try {
+      if (cartShop && cartShop.slug !== slug) {
+        const activeCart = await getCart(cartShop.slug);
+        const activeCartCount = cartItemCount(activeCart.items);
+        setCartCount(activeCartCount);
+
+        if (activeCartCount > 0) {
+          const viewCart = await confirm({
+            title: 'Finish your current cart first',
+            message: `Your cart already has products from ${cartShop.name}. Complete checkout or remove its items before adding products from ${shopName}.`,
+            cancelLabel: 'Keep browsing',
+            confirmLabel: 'View cart',
+          });
+          if (viewCart) router.push('/(tabs)/cart');
+          return;
+        }
+      }
+
       const cart = await addToCart(slug, { product_id: product.id, quantity, color, size });
       await setCartShop({ slug, name: shopName });
       setCartCount(cartItemCount(cart.items));
-      showToast('Added to cart', 'success');
+      wasAdded = true;
     } catch (cause) {
       showToast(getErrorMessage(cause), 'error');
     } finally {
       addingRef.current = false;
       setAdding(false);
     }
+    if (!wasAdded) return;
+
+    const viewCart = await confirm({
+      title: 'Added to cart',
+      message: `${product.name} is now in your cart. What would you like to do next?`,
+      cancelLabel: 'Explore shop',
+      confirmLabel: 'View cart',
+      success: true,
+    });
+    if (viewCart) {
+      router.push('/(tabs)/cart');
+      return;
+    }
+    router.replace({ pathname: '/shop/[slug]', params: { slug } });
   }, [
     color,
+    cartShop,
+    confirm,
     isAuthenticated,
     needsColor,
     needsSize,
@@ -168,15 +203,7 @@ export default function ShopProduct() {
     <Page>
       <ScreenHeader
         title={shopName}
-        right={
-          <Pressable
-            accessibilityLabel="Open cart"
-            onPress={() => router.push('/(tabs)/cart')}
-            style={styles.cart}
-          >
-            <Label style={styles.cartText}>Cart</Label>
-          </Pressable>
-        }
+        right={<CartIconButton onPress={() => router.push('/(tabs)/cart')} />}
       />
       <View style={[styles.layout, tablet && styles.layoutTablet]}>
         <View style={styles.galleryColumn}>
@@ -330,14 +357,6 @@ export default function ShopProduct() {
 }
 
 const styles = StyleSheet.create({
-  cart: {
-    minHeight: 38,
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: colors.tealSoft,
-    paddingHorizontal: 13,
-  },
-  cartText: { color: colors.teal, fontSize: 12 },
   layout: { gap: 15 },
   layoutTablet: { flexDirection: 'row', alignItems: 'flex-start' },
   galleryColumn: { minWidth: 0, flex: 1 },

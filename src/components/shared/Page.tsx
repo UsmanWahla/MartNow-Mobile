@@ -33,6 +33,7 @@ export function Page({
   const segments = useSegments();
   const isTabScreen = (segments as readonly string[]).includes('(tabs)');
   const horizontal = width < 380 ? 12 : width < 768 ? 18 : 28;
+  const topSpace = width < 380 ? 10 : 12;
   const bottomSpace = isTabScreen ? 96 : Math.max(42, insets.bottom + 28);
   const content = (
     <ScrollView
@@ -56,6 +57,7 @@ export function Page({
           styles.inner,
           {
             paddingHorizontal: horizontal,
+            paddingTop: topSpace,
             paddingBottom: bottomSpace,
             maxWidth: compact ? 760 : PAGE_MAX_WIDTH,
           },
@@ -83,9 +85,9 @@ export function Page({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.page },
+  safe: { flex: 1, backgroundColor: colors.mint },
   fill: { flex: 1 },
-  scroll: { flex: 1 },
+  scroll: { flex: 1, backgroundColor: colors.page },
   scrollContent: { flexGrow: 1 },
   inner: { width: '100%', alignSelf: 'center', gap: 18 },
 });
