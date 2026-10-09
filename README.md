@@ -74,7 +74,9 @@ Before the first EAS build, set the final `android.package` and `ios.bundleIdent
 
 ## Maps
 
-The customer address picker uses native MapLibre with the same OpenStreetMap raster tiles as the web frontend. It needs a custom Expo development, preview, or production build; it cannot run inside Expo Go. No Google Maps API key or billing account is required.
+The customer address picker draws the same OpenStreetMap raster tiles as the web frontend. Tiles are downloaded with an application User-Agent, because OpenStreetMap replaces the default Android image-loader agent with a block image. It works in Expo Go and in the current development build. No Google Maps API key or billing account is required.
+
+`expo-maps` is not used. That package is absent from Expo Go, and on Android it renders Google Maps, which stays blank in a custom build until a Google Maps API key is added and a new native build is installed.
 
 OpenStreetMap attribution is visible in the map. The public OSM tile service is suitable for normal interactive use only; do not add offline downloads or tile prefetching. Before a high-traffic production release, use an OSM-compatible managed tile provider or self-hosted tiles.
 

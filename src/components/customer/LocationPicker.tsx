@@ -1,11 +1,9 @@
-import type { ComponentType } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import * as Location from 'expo-location';
-import Constants, { AppOwnership } from 'expo-constants';
 
+import DeliveryMap from './DeliveryMap';
 import type { LocationPickerProps } from './LocationPicker.types';
-import type { OpenStreetMapProps } from './OpenStreetMap';
 import { AppIcon } from '@/components/shared/AppIcon';
 import { Body, Label } from '@/components/shared/Typography';
 import { colors, radius } from '@/constants/theme';
@@ -13,41 +11,11 @@ import { reverseLocation, searchLocations } from '@/services/martnow';
 import type { StoreLocationResult } from '@/types/api';
 import { getErrorMessage } from '@/utils/error-message';
 
-const isExpoGo = Constants.appOwnership === AppOwnership.Expo;
 const formatCoordinate = (value: number) => String(Math.round(value * 10_000_000) / 10_000_000);
 
 function parseCoordinate(value: string, minimum: number, maximum: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= minimum && parsed <= maximum ? parsed : null;
-}
-
-function DeliveryMap({ latitude, longitude, onMapError, onPick }: OpenStreetMapProps) {
-  if (isExpoGo) {
-    return (
-      <View style={styles.mapUnavailable}>
-        <AppIcon name="phone-portrait-outline" size={28} color={colors.teal} />
-        <Label style={styles.mapUnavailableTitle}>Map needs the MartNow Dev Build</Label>
-        <Body style={styles.mapUnavailableText}>
-          OpenStreetMap is available after installing the custom development build. You can still
-          search or use your current location here.
-        </Body>
-      </View>
-    );
-  }
-
-  // MapLibre is imported only in a custom native build. Expo Go has no MapLibre
-  // native module and must never evaluate this import.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const NativeOpenStreetMap = require('./OpenStreetMap')
-    .default as ComponentType<OpenStreetMapProps>;
-  return (
-    <NativeOpenStreetMap
-      latitude={latitude}
-      longitude={longitude}
-      onMapError={onMapError}
-      onPick={onPick}
-    />
-  );
 }
 
 export default function LocationPicker({
@@ -298,15 +266,13 @@ export default function LocationPicker({
         ) : null}
         <Body style={styles.hint}>
           {region
-            ? isExpoGo
-              ? 'Install the MartNow Dev Build to move the pin on the map.'
-              : 'Tap the map to move the pin.'
+            ? 'Drag the map, or tap it to move the pin.'
             : 'Search or use GPS to show the map.'}
         </Body>
       </View>
 
       {region ? (
-        <View style={styles.mapFrame}>
+        <View collapsable={false} style={styles.mapFrame}>
           <DeliveryMap
             latitude={region.latitude}
             longitude={region.longitude}
@@ -405,21 +371,13 @@ const styles = StyleSheet.create({
   hint: { flexShrink: 1, fontSize: 10 },
   mapFrame: {
     position: 'relative',
+    width: '100%',
     height: 230,
-    overflow: 'hidden',
     borderRadius: radius.md,
-    backgroundColor: '#EAF3EF',
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: '#C5D5CE',
   },
-  mapUnavailable: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    padding: 24,
-    backgroundColor: colors.tealSoft,
-  },
-  mapUnavailableTitle: { color: colors.teal, fontSize: 13 },
-  mapUnavailableText: { maxWidth: 300, textAlign: 'center', fontSize: 11, lineHeight: 16 },
   mapEmpty: {
     height: 230,
     alignItems: 'center',
