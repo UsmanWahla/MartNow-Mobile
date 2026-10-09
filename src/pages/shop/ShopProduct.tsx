@@ -11,12 +11,10 @@ import { QuantityStepper } from '@/components/shop/QuantityStepper';
 import { Button, ErrorState, LoadingState } from '@/components/ui';
 import { colors, radius } from '@/constants/theme';
 import { useResponsive } from '@/hooks/use-responsive';
-import { addToCart, getCart, getShopProduct } from '@/services/martnow';
-import { useAuth } from '@/store/auth-context';
+import { useAddToCart } from '@/hooks/use-add-to-cart';
+import { getShopProduct } from '@/services/martnow';
 import { useFeedback } from '@/store/feedback-context';
-import { useCartShop } from '@/store/shop-context';
 import type { Product } from '@/types/api';
-import { cartItemCount } from '@/utils/cart';
 import { getErrorMessage } from '@/utils/error-message';
 import { asNumber, formatPrice } from '@/utils/format';
 import { firstRouteParam } from '@/utils/navigation';
@@ -28,9 +26,8 @@ export default function ShopProduct() {
   const slug = firstRouteParam(params.slug);
   const productId = firstRouteParam(params.productId);
   const { tablet } = useResponsive();
-  const { isAuthenticated } = useAuth();
   const { showToast, confirm } = useFeedback();
-  const { cartShop, setCartShop, setCartCount } = useCartShop();
+  const { addToShopCart, isAdding } = useAddToCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [shopName, setShopName] = useState('Store');
   const [color, setColor] = useState('');
@@ -38,10 +35,8 @@ export default function ShopProduct() {
   const [quantity, setQuantity] = useState(1);
   const [optionError, setOptionError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
   const requestId = useRef(0);
-  const addingRef = useRef(false);
   const load = useCallback(async () => {
     if (!slug || !productId) {
       setLoading(false);
@@ -102,12 +97,7 @@ export default function ShopProduct() {
     [color, needsColor, product],
   );
   const add = useCallback(async () => {
-    if (!product || !slug || addingRef.current) return;
-    const next = `/product/${slug}/${product.id}`;
-    if (!isAuthenticated) {
-      router.push({ pathname: '/auth/login', params: { next } });
-      return;
-    }
+    if (!product || !slug || isAdding) return;
     if ((needsColor && !color) || (needsSize && !size)) {
       const message =
         needsColor && !color && needsSize && !size
@@ -119,38 +109,18 @@ export default function ShopProduct() {
       showToast(message, 'error');
       return;
     }
-    addingRef.current = true;
-    setAdding(true);
-    let wasAdded = false;
-    try {
-      if (cartShop && cartShop.slug !== slug) {
-        const activeCart = await getCart(cartShop.slug);
-        const activeCartCount = cartItemCount(activeCart.items);
-        setCartCount(activeCartCount);
-
-        if (activeCartCount > 0) {
-          const viewCart = await confirm({
-            title: 'Finish your current cart first',
-            message: `Your cart already has products from ${cartShop.name}. Complete checkout or remove its items before adding products from ${shopName}.`,
-            cancelLabel: 'Keep browsing',
-            confirmLabel: 'View cart',
-          });
-          if (viewCart) router.push('/(tabs)/cart');
-          return;
-        }
-      }
-
-      const cart = await addToCart(slug, { product_id: product.id, quantity, color, size });
-      await setCartShop({ slug, name: shopName });
-      setCartCount(cartItemCount(cart.items));
-      wasAdded = true;
-    } catch (cause) {
-      showToast(getErrorMessage(cause), 'error');
-    } finally {
-      addingRef.current = false;
-      setAdding(false);
-    }
-    if (!wasAdded) return;
+    const outcome = await addToShopCart({
+      slug,
+      shopName,
+      productId: product.id,
+      productName: product.name,
+      quantity,
+      color,
+      size,
+      loginNext: `/product/${slug}/${product.id}`,
+      announce: false,
+    });
+    if (outcome !== 'added') return;
 
     const viewCart = await confirm({
       title: 'Added to cart',
@@ -165,16 +135,14 @@ export default function ShopProduct() {
     }
     router.replace({ pathname: '/shop/[slug]', params: { slug } });
   }, [
+    addToShopCart,
     color,
-    cartShop,
     confirm,
-    isAuthenticated,
+    isAdding,
     needsColor,
     needsSize,
     product,
     quantity,
-    setCartCount,
-    setCartShop,
     shopName,
     showToast,
     size,
@@ -324,7 +292,7 @@ export default function ShopProduct() {
               />
               <Button
                 label={
-                  adding
+                  isAdding
                     ? 'Adding…'
                     : !optionReady
                       ? 'Choose option'
@@ -335,7 +303,7 @@ export default function ShopProduct() {
                 onPress={() => {
                   void add();
                 }}
-                loading={adding}
+                loading={isAdding}
                 disabled={outOfStock}
                 fullWidth={false}
               />

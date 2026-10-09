@@ -5,9 +5,13 @@ import type { Product } from '@/types/api';
 
 export function ProductGrid({
   products,
+  shopSlug,
+  shopName,
   onOpen,
 }: {
   products: Product[];
+  shopSlug: string;
+  shopName: string;
   onOpen: (product: Product) => void;
 }) {
   const { width } = useWindowDimensions();
@@ -23,6 +27,8 @@ export function ProductGrid({
           product={product}
           index={index}
           width={cardWidth}
+          shopSlug={shopSlug}
+          shopName={shopName}
           onPress={() => onOpen(product)}
         />
       ))}

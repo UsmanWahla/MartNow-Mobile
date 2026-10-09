@@ -1,4 +1,4 @@
-import { cartItemCount } from '@/utils/cart';
+import { cartItemCount, needsCartReplacement, otherStoreCartMessage } from '@/utils/cart';
 import { asNumber, asOptionalNonNegativeNumber, firstName, formatPrice } from '@/utils/format';
 import { firstRouteParam, safeDestination } from '@/utils/navigation';
 import {
@@ -28,6 +28,14 @@ describe('navigation helpers', () => {
 });
 
 describe('cart and quantity helpers', () => {
+  test('asks to replace a cart only when another store already has items', () => {
+    expect(needsCartReplacement('ali-trader', 'd-watson', 2)).toBe(true);
+    expect(needsCartReplacement('ali-trader', 'ali-trader', 2)).toBe(false);
+    expect(needsCartReplacement('ali-trader', 'd-watson', 0)).toBe(false);
+    expect(needsCartReplacement(null, 'd-watson', 3)).toBe(false);
+    expect(otherStoreCartMessage('Ali Trader')).toContain('Ali Trader');
+  });
+
   test('counts only finite positive quantities', () => {
     expect(
       cartItemCount([

@@ -1,6 +1,12 @@
 import { apiConfig } from '@/constants/config';
 
-import { clearAccessToken, getAccessToken, saveAccessToken } from './auth-token';
+import {
+  clearAccessToken,
+  getAccessToken,
+  getRefreshToken,
+  saveAccessToken,
+  saveRefreshToken,
+} from './auth-token';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -17,6 +23,7 @@ interface ErrorPayload {
 
 interface RefreshPayload {
   token?: unknown;
+  refreshToken?: unknown;
 }
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -82,16 +89,22 @@ async function refreshAccessToken() {
     const timeoutId = setTimeout(() => controller.abort(), apiConfig.timeoutMs);
 
     try {
+      const refreshToken = await getRefreshToken();
       const response = await fetch(buildUrl('/api/refresh'), {
         method: 'POST',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-MartNow-Client': 'mobile',
+        },
         credentials: 'include',
-        body: '{}',
+        body: JSON.stringify(refreshToken ? { refreshToken } : {}),
         signal: controller.signal,
       });
       const payload = (await readResponse(response)) as RefreshPayload | null;
       if (!response.ok || typeof payload?.token !== 'string') return null;
       await saveAccessToken(payload.token);
+      if (typeof payload.refreshToken === 'string') await saveRefreshToken(payload.refreshToken);
       return payload.token;
     } catch {
       return null;
@@ -112,6 +125,7 @@ async function request<T>(path: string, options: RequestOptions = {}, isRetry = 
     const token = options.requiresAuth === false ? null : await getAccessToken();
     const headers: Record<string, string> = {
       Accept: 'application/json',
+      'X-MartNow-Client': 'mobile',
       ...options.headers,
     };
 

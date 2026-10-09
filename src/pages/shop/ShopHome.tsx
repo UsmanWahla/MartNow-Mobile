@@ -435,7 +435,12 @@ export default function ShopHome() {
 
       {visible.length ? (
         <View style={styles.productsSection}>
-          <ProductGrid products={renderedProducts} onOpen={openProduct} />
+          <ProductGrid
+            products={renderedProducts}
+            shopSlug={slug ?? ''}
+            shopName={shop.shop_name}
+            onOpen={openProduct}
+          />
           {renderedProducts.length < visible.length ? (
             <View style={styles.loadMore}>
               <Body style={styles.loadMoreCount}>

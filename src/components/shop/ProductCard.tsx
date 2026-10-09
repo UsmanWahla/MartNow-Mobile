@@ -1,28 +1,49 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeInUp, ReduceMotion } from 'react-native-reanimated';
 
 import { AppIcon } from '@/components/shared/AppIcon';
 import { Body, Heading, Label, Money } from '@/components/shared/Typography';
 import { colors, radius, shadow } from '@/constants/theme';
+import { useAddToCart } from '@/hooks/use-add-to-cart';
 import { assetUrl } from '@/services/martnow';
 import type { Product } from '@/types/api';
 import { formatPrice } from '@/utils/format';
-import { saleStock, unitLabel } from '@/utils/product-units';
+import { productStep, saleStock, unitLabel } from '@/utils/product-units';
+import { hasVariantOptions } from '@/utils/variant-stock';
 
 export function ProductCard({
   product,
   index = 0,
   width,
+  shopSlug,
+  shopName,
   onPress,
 }: {
   product: Product;
   index?: number;
   width: number;
+  shopSlug: string;
+  shopName: string;
   onPress: () => void;
 }) {
+  const { addToShopCart, isAdding } = useAddToCart();
   const uri = assetUrl(product.image_path || product.images?.[0]?.path);
   const available = saleStock(product);
+  const step = productStep(product);
+  const needsOptions = hasVariantOptions(product);
+  const canAdd = available >= step;
+  const add = () => {
+    if (!canAdd || isAdding) return;
+    void addToShopCart({
+      slug: shopSlug,
+      shopName,
+      productId: product.id,
+      productName: product.name,
+      quantity: step,
+      loginNext: `/shop/${shopSlug}`,
+    });
+  };
   return (
     <Animated.View
       entering={FadeInUp.delay(Math.min(index, 10) * 35)
@@ -30,10 +51,11 @@ export function ProductCard({
         .reduceMotion(ReduceMotion.System)}
       style={{ width }}
     >
+      <View style={styles.card}>
       <Pressable
         accessibilityRole="button"
         onPress={onPress}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={({ pressed }) => [pressed && styles.pressed]}
       >
         <View style={styles.media}>
           {uri ? (
@@ -82,10 +104,12 @@ export function ProductCard({
               <Money style={styles.price}>{formatPrice(product.price)}</Money>
               <Body style={styles.unit}>/ {product.sale_unit || 'piece'}</Body>
             </View>
-            <View style={styles.viewButton}>
-              <Label style={styles.viewText}>View</Label>
-              <AppIcon name="arrow-forward" size={15} color={colors.teal} />
-            </View>
+            {needsOptions ? (
+              <View style={styles.viewButton}>
+                <Label style={styles.viewText}>View</Label>
+                <AppIcon name="arrow-forward" size={15} color={colors.teal} />
+              </View>
+            ) : null}
           </View>
           {available > 0 ? (
             <Body style={styles.available}>
@@ -94,6 +118,28 @@ export function ProductCard({
           ) : null}
         </View>
       </Pressable>
+      {needsOptions ? null : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={canAdd ? `Add ${product.name} to cart` : `${product.name} is sold out`}
+          disabled={!canAdd || isAdding}
+          onPress={add}
+          style={({ pressed }) => [
+            styles.addButton,
+            !canAdd && styles.addButtonDisabled,
+            pressed && canAdd && !isAdding && styles.addPressed,
+          ]}
+        >
+          {isAdding ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Label style={[styles.addText, !canAdd && styles.addTextDisabled]}>
+              {canAdd ? 'Add to cart' : 'Sold out'}
+            </Label>
+          )}
+        </Pressable>
+      )}
+      </View>
     </Animated.View>
   );
 }
@@ -165,4 +211,17 @@ const styles = StyleSheet.create({
   },
   viewText: { color: colors.teal, fontSize: 11 },
   available: { fontSize: 10 },
+  addButton: {
+    minHeight: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 10,
+    backgroundColor: colors.teal,
+  },
+  addButtonDisabled: { backgroundColor: '#EDF2F0' },
+  addText: { color: '#fff', fontSize: 13 },
+  addTextDisabled: { color: colors.muted },
+  addPressed: { opacity: 0.82 },
 });

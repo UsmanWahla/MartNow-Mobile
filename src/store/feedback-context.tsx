@@ -20,6 +20,7 @@ type ToastTone = 'success' | 'error' | 'info';
 interface ConfirmOptions {
   title: string;
   message: string;
+  highlight?: string;
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
@@ -139,7 +140,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
               <AppIcon name={dialogIcon} size={26} color={dialogIconColor} />
             </View>
             <Heading style={styles.dialogTitle}>{confirmState?.title}</Heading>
-            <Body style={styles.dialogMessage}>{confirmState?.message}</Body>
+            <DialogMessage message={confirmState?.message ?? ''} highlight={confirmState?.highlight} />
             <View style={styles.dialogActions}>
               <Pressable
                 onPress={() => settle(false)}
@@ -166,6 +167,20 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
         </View>
       </Modal>
     </FeedbackContext.Provider>
+  );
+}
+
+function DialogMessage({ message, highlight }: { message: string; highlight?: string }) {
+  const name = highlight?.trim();
+  const index = name ? message.indexOf(name) : -1;
+  if (!name || index < 0) return <Body style={styles.dialogMessage}>{message}</Body>;
+
+  return (
+    <Body style={styles.dialogMessage}>
+      {message.slice(0, index)}
+      <Body style={styles.dialogHighlight}>{name}</Body>
+      {message.slice(index + name.length)}
+    </Body>
   );
 }
 
@@ -222,6 +237,7 @@ const styles = StyleSheet.create({
   dialogIconSuccess: { backgroundColor: colors.successSoft },
   dialogTitle: { marginTop: 13, fontSize: 20, textAlign: 'center' },
   dialogMessage: { marginTop: 7, fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  dialogHighlight: { color: colors.tealDark, fontFamily: 'Outfit_700Bold' },
   dialogActions: { width: '100%', flexDirection: 'row', gap: 10, marginTop: 20 },
   dialogButton: {
     minHeight: 46,

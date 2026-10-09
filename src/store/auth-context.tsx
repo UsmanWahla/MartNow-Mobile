@@ -2,7 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import type { CustomerUser } from '@/types/api';
 
-import { clearAccessToken, getAccessToken, saveAccessToken } from '@/services/auth-token';
+import {
+  clearAccessToken,
+  getAccessToken,
+  getRefreshToken,
+  saveAccessToken,
+  saveRefreshToken,
+} from '@/services/auth-token';
 import { setUnauthorizedHandler } from '@/services/api';
 import { customerLogin, customerLogout, customerSignup } from '@/services/martnow';
 import { clearStoredCustomer, getStoredCustomer, storeCustomer } from '@/services/session';
@@ -50,8 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => setUnauthorizedHandler(null);
   }, []);
 
-  const persistSession = useCallback(async (token: string, user: CustomerUser) => {
+  const persistSession = useCallback(async (token: string, user: CustomerUser, refreshToken?: string) => {
     await saveAccessToken(token);
+    if (refreshToken) await saveRefreshToken(refreshToken);
     await storeCustomer(user);
     setCustomer(user);
   }, []);
@@ -59,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = useCallback(
     async (email: string, password: string) => {
       const response = await customerLogin({ email, password });
-      await persistSession(response.token, response.user);
+      await persistSession(response.token, response.user, response.refreshToken);
     },
     [persistSession],
   );
@@ -67,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = useCallback(
     async (payload: { name: string; email: string; password: string; phone?: string }) => {
       const response = await customerSignup(payload);
-      await persistSession(response.token, response.user);
+      await persistSession(response.token, response.user, response.refreshToken);
     },
     [persistSession],
   );
@@ -79,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
-      await customerLogout();
+      await customerLogout(await getRefreshToken());
     } catch {
       // Local sign-out still protects the device if the access token has already expired.
     }

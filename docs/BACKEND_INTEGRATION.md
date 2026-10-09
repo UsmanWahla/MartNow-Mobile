@@ -20,7 +20,7 @@ Customer authentication uses:
 - `POST /api/refresh`
 - `POST /api/logout`
 
-Login and signup return `{ message, token, user }`. The app stores the access token in Expo SecureStore. Requests send `Authorization: Bearer <token>` and credentials. A `401` triggers one refresh attempt, saves the rotated access token, retries the original request, and clears the local customer session if refresh fails.
+Login and signup return `{ message, user }` for the web app, and also `{ token, refreshToken }` when the request sends `X-MartNow-Client: mobile`. The app stores those tokens in Expo SecureStore. Requests send `Authorization: Bearer <token>` and credentials. A `401` triggers one refresh attempt, saves the rotated access token, retries the original request, and clears the local customer session if refresh fails.
 
 The refresh token is HTTP-only and cookie-based. Its persistence must be part of physical-device release testing because native cookie behavior belongs to the platform networking layer.
 

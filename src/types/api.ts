@@ -104,6 +104,7 @@ export interface CustomerUser {
 export interface AuthResponse {
   message: string;
   token: string;
+  refreshToken?: string;
   user: CustomerUser;
 }
 

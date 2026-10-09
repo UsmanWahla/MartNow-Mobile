@@ -17,6 +17,9 @@ export async function getStoredCustomer(): Promise<CustomerUser | null> {
 }
 
 export function storeCustomer(customer: CustomerUser): Promise<void> {
+  if (!customer || typeof customer !== 'object') {
+    throw new Error('Login did not return a customer profile.');
+  }
   return setStoredValue(CUSTOMER_KEY, JSON.stringify(customer));
 }
 

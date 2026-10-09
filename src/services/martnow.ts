@@ -74,8 +74,8 @@ export function customerSignup(payload: {
   return api.post<AuthResponse>('/api/customer/signup', payload, { requiresAuth: false });
 }
 
-export function customerLogout() {
-  return api.post<{ message?: string }>('/api/logout');
+export function customerLogout(refreshToken?: string | null) {
+  return api.post<{ message?: string }>('/api/logout', refreshToken ? { refreshToken } : {});
 }
 
 export function getCustomerProfile() {
