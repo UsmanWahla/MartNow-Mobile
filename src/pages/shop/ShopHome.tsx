@@ -11,7 +11,7 @@ import { SearchBar } from '@/components/shared/SearchBar';
 import { Body, Heading, Label } from '@/components/shared/Typography';
 import { CartIconButton } from '@/components/shop/CartIconButton';
 import { ProductGrid } from '@/components/shop/ProductGrid';
-import { EmptyState, ErrorState, LoadingState } from '@/components/ui';
+import { Button, EmptyState, ErrorState, LoadingState } from '@/components/ui';
 import { colors, radius } from '@/constants/theme';
 import { assetUrl, getShopMeta, getShopProducts } from '@/services/martnow';
 import type { Product, ShopMeta } from '@/types/api';
@@ -19,6 +19,7 @@ import { getErrorMessage } from '@/utils/error-message';
 import { firstRouteParam } from '@/utils/navigation';
 
 type Sort = 'featured' | 'newest' | 'price-low' | 'price-high';
+const PRODUCT_RENDER_BATCH = 24;
 
 const sorts: { value: Sort; label: string }[] = [
   { value: 'featured', label: 'Featured' },
@@ -168,6 +169,7 @@ export default function ShopHome() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState<Sort>('featured');
+  const [renderLimit, setRenderLimit] = useState(PRODUCT_RENDER_BATCH);
   const [storeInfoOpen, setStoreInfoOpen] = useState(false);
   const [catalogOptionsOpen, setCatalogOptionsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -256,6 +258,12 @@ export default function ShopHome() {
     }
     return initial;
   }, [categories, category]);
+
+  useEffect(() => {
+    setRenderLimit(PRODUCT_RENDER_BATCH);
+  }, [category, query, sort]);
+
+  const renderedProducts = visible.slice(0, renderLimit);
 
   const activeSortLabel = sorts.find((item) => item.value === sort)?.label ?? 'Featured';
   const hasCatalogFilter = Boolean(category) || sort !== 'featured';
@@ -427,7 +435,19 @@ export default function ShopHome() {
 
       {visible.length ? (
         <View style={styles.productsSection}>
-          <ProductGrid products={visible} onOpen={openProduct} />
+          <ProductGrid products={renderedProducts} onOpen={openProduct} />
+          {renderedProducts.length < visible.length ? (
+            <View style={styles.loadMore}>
+              <Body style={styles.loadMoreCount}>
+                Showing {renderedProducts.length} of {visible.length} products
+              </Body>
+              <Button
+                label={`Show next ${Math.min(PRODUCT_RENDER_BATCH, visible.length - renderedProducts.length)}`}
+                variant="secondary"
+                onPress={() => setRenderLimit((current) => current + PRODUCT_RENDER_BATCH)}
+              />
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -675,6 +695,8 @@ const styles = StyleSheet.create({
   categoryPillText: { color: colors.teal, fontFamily: 'Outfit_600SemiBold', fontSize: 12 },
   categoryPillTextSelected: { color: '#FFFFFF' },
   productsSection: { gap: 10 },
+  loadMore: { alignItems: 'center', gap: 8, paddingTop: 4 },
+  loadMoreCount: { fontSize: 11 },
   pressed: { opacity: 0.68 },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
   backdrop: {

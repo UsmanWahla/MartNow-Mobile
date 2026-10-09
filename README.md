@@ -59,8 +59,8 @@ The app opens on the live MartNow marketplace. Stores, products, cart, checkout,
 ## Validate before release
 
 ```powershell
-npx tsc --noEmit
-npx expo lint
+npm run typecheck
+npm run lint
 npm test
 npm run format:check
 npx expo-doctor
@@ -70,7 +70,7 @@ npx expo export --platform ios
 
 The development API currently uses plain HTTP on the trusted local Wi-Fi network. Set `MARTNOW_ALLOW_HTTP=true` only for a local development build. Production builds must use an HTTPS API URL and leave that flag unset.
 
-Before the first EAS build, set the final `android.package` and `ios.bundleIdentifier` in `app.json`, then run `npx eas-cli build:configure`. The included `eas.json` keeps preview and production environments separate. Production configuration fails early if the API URL is not HTTPS or development cleartext HTTP is enabled.
+The Android package and iOS bundle identifier are both `com.martnow.mobile`. Confirm that this identifier matches the registered Play Console and App Store Connect apps before running `npx eas-cli build:configure`. The included `eas.json` keeps preview and production environments separate. Production configuration fails early if the API URL is not HTTPS or development cleartext HTTP is enabled.
 
 ## Maps
 

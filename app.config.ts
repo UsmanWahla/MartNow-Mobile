@@ -14,8 +14,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     throw new Error('MARTNOW_ALLOW_HTTP must be false or unset for production builds.');
   }
 
-  plugins.push('@maplibre/maplibre-react-native');
-
   if (allowDevelopmentHttp) {
     plugins.push(['expo-build-properties', { android: { usesCleartextTraffic: true } }]);
   }

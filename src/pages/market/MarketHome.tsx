@@ -5,6 +5,7 @@ import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { StoreGrid } from '@/components/market/StoreGrid';
 import { AppIcon } from '@/components/shared/AppIcon';
+import { BrandLogo } from '@/components/shared/BrandLogo';
 import { Page } from '@/components/shared/Page';
 import { SearchBar } from '@/components/shared/SearchBar';
 import { Body, Heading, Label } from '@/components/shared/Typography';
@@ -26,11 +27,8 @@ export default function MarketHome() {
       <View style={styles.hero}>
         <View style={styles.orbOne} />
         <View style={styles.orbTwo} />
-        <View style={styles.heroTop}>
-          <View style={styles.mark}>
-            <AppIcon name="storefront" size={20} color="#fff" />
-          </View>
-          <Label style={styles.brand}>MARTNOW MARKETPLACE</Label>
+        <View style={styles.brandLockup}>
+          <BrandLogo style={styles.heroLogo} />
         </View>
         <Heading style={styles.heroTitle}>
           {customer ? `Welcome, ${firstName(customer.name)}` : 'All stores, one marketplace'}
@@ -160,16 +158,15 @@ const styles = StyleSheet.create({
     borderRadius: 75,
     backgroundColor: 'rgba(15,118,110,0.38)',
   },
-  heroTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
-  mark: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: colors.teal,
+  brandLockup: {
+    alignSelf: 'flex-start',
+    marginBottom: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 11,
+    backgroundColor: '#FFFFFF',
   },
-  brand: { color: '#9DE2D3', fontSize: 10, letterSpacing: 1.25 },
+  heroLogo: { width: 158, height: 24 },
   heroTitle: {
     maxWidth: 560,
     color: '#fff',

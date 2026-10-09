@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MartNow Mobile",
+    "name": "MartNow",
     "slug": "martnow-mobile",
     "version": "1.0.0",
     "platforms": ["ios", "android"],
@@ -16,6 +16,7 @@
     },
     "ios": {
       "icon": "./assets/images/martnow-app-icon.png",
+      "bundleIdentifier": "com.martnow.mobile",
       "buildNumber": "1"
     },
     "android": {
@@ -23,8 +24,8 @@
       "versionCode": 1,
       "backgroundColor": "#EEF6F3",
       "adaptiveIcon": {
-        "backgroundColor": "#0B1F1C",
-        "foregroundImage": "./assets/images/martnow-app-icon.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/martnow-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -33,9 +34,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0B1F1C",
-          "image": "./assets/images/martnow-app-icon.png",
-          "imageWidth": 128
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/martnow-logo.png",
+          "imageWidth": 280
         }
       ],
       "expo-secure-store",

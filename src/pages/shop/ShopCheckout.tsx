@@ -19,7 +19,7 @@ import { useCartShop } from '@/store/shop-context';
 import type { CustomerAddress, ShopCart, ShopMeta } from '@/types/api';
 import { cartItemCount } from '@/utils/cart';
 import { getErrorMessage } from '@/utils/error-message';
-import { asNumber, formatPrice } from '@/utils/format';
+import { asNumber, asOptionalNonNegativeNumber, formatPrice } from '@/utils/format';
 import { firstRouteParam } from '@/utils/navigation';
 import { formatQuantity } from '@/utils/product-units';
 
@@ -129,8 +129,9 @@ export default function ShopCheckout() {
       };
     }, [isReady, load]),
   );
-  const platformFee = asNumber(shop?.platform_delivery_fee ?? 50);
-  const deliveryFee = deliveryBy === 'platform' ? platformFee : 0;
+  const platformFee = asOptionalNonNegativeNumber(shop?.platform_delivery_fee);
+  const platformDeliveryUnavailable = deliveryBy === 'platform' && platformFee == null;
+  const deliveryFee = deliveryBy === 'platform' ? (platformFee ?? 0) : 0;
   const payable = asNumber(cart.total) + deliveryFee;
   const itemCount = cartItemCount(cart.items);
   const selectedAddress = useMemo(
@@ -170,12 +171,21 @@ export default function ShopCheckout() {
   };
   const place = async () => {
     if (!slug || placingRef.current) return;
+    if (platformDeliveryUnavailable) {
+      showToast(
+        'Platform delivery fee is unavailable. Choose store delivery or try again.',
+        'error',
+      );
+      return;
+    }
     const next: Record<string, string> = {};
     if (!form.name.trim()) next.name = 'Enter receiver name.';
     if (!form.email.trim()) next.email = 'Enter email.';
     if (!form.phone.trim()) next.phone = 'Enter phone.';
     if (!form.address.trim()) next.address = 'Enter delivery address.';
     if (!form.city.trim()) next.city = 'Enter city.';
+    if (form.save_address && !form.address_label.trim())
+      next.address_label = 'Enter an address label.';
     if ((form.latitude && !form.longitude) || (!form.latitude && form.longitude))
       next.address = 'Select both coordinates.';
     setFieldErrors(next);
@@ -188,6 +198,7 @@ export default function ShopCheckout() {
     try {
       const order = await checkout(slug, {
         ...form,
+        address_label: form.address_label.trim(),
         payment_method: 'cod',
         delivery_by: shop?.delivery_enabled === false ? 'platform' : deliveryBy,
         address_id: form.address_id,
@@ -368,6 +379,7 @@ export default function ShopCheckout() {
                   <Field
                     label="Address label"
                     value={form.address_label}
+                    error={fieldErrors.address_label}
                     placeholder="Home, Office, Parents"
                     onChangeText={(address_label) => patch({ address_label })}
                   />
@@ -391,18 +403,33 @@ export default function ShopCheckout() {
                 </Pressable>
               ) : null}
               <Pressable
+                accessibilityState={{
+                  disabled: platformFee == null,
+                  selected: deliveryBy === 'platform',
+                }}
+                disabled={platformFee == null}
                 onPress={() => setDeliveryBy('platform')}
-                style={[styles.delivery, deliveryBy === 'platform' && styles.deliverySelected]}
+                style={[
+                  styles.delivery,
+                  deliveryBy === 'platform' && styles.deliverySelected,
+                  platformFee == null && styles.deliveryUnavailable,
+                ]}
               >
                 <AppIcon name="bicycle-outline" size={21} color={colors.teal} />
                 <View style={styles.deliveryCopy}>
                   <Label style={styles.deliveryName}>MartNow platform</Label>
-                  <Body style={styles.deliveryPrice}>+ {formatPrice(platformFee)}</Body>
+                  <Body style={styles.deliveryPrice}>
+                    {platformFee == null ? 'Fee unavailable' : `+ ${formatPrice(platformFee)}`}
+                  </Body>
                 </View>
               </Pressable>
             </View>
             {shop.delivery_enabled === false ? (
-              <Body style={styles.deliveryHint}>Store delivery is unavailable for this shop.</Body>
+              <Body style={styles.deliveryHint}>
+                {platformFee == null
+                  ? 'Delivery is temporarily unavailable because no platform fee was provided.'
+                  : 'Store delivery is unavailable for this shop.'}
+              </Body>
             ) : null}
           </View>
           <View style={styles.cod}>
@@ -448,8 +475,12 @@ export default function ShopCheckout() {
               </View>
               <View style={styles.amountRow}>
                 <Body>Delivery</Body>
-                <Money style={deliveryFee === 0 && styles.free}>
-                  {deliveryFee ? formatPrice(deliveryFee) : 'Free'}
+                <Money style={!platformDeliveryUnavailable && deliveryFee === 0 && styles.free}>
+                  {platformDeliveryUnavailable
+                    ? 'Unavailable'
+                    : deliveryFee
+                      ? formatPrice(deliveryFee)
+                      : 'Free'}
                 </Money>
               </View>
               <View style={[styles.amountRow, styles.payableRow]}>
@@ -458,11 +489,18 @@ export default function ShopCheckout() {
               </View>
             </View>
             <Button
-              label={placing ? 'Placing…' : `Place order · ${formatPrice(payable)}`}
+              label={
+                platformDeliveryUnavailable
+                  ? 'Delivery fee unavailable'
+                  : placing
+                    ? 'Placing…'
+                    : `Place order · ${formatPrice(payable)}`
+              }
               onPress={() => {
                 void place();
               }}
               loading={placing}
+              disabled={platformDeliveryUnavailable}
             />
           </View>
         </View>
@@ -545,6 +583,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   deliverySelected: { borderColor: colors.teal, backgroundColor: colors.tealSoft },
+  deliveryUnavailable: { opacity: 0.45 },
   deliveryCopy: { flex: 1 },
   deliveryName: { fontSize: 12 },
   deliveryPrice: { marginTop: 1, fontSize: 10 },
