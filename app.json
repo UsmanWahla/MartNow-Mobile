@@ -34,9 +34,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FFFFFF",
-          "image": "./assets/images/martnow-logo.png",
-          "imageWidth": 280
+          "backgroundColor": "#EEF6F3",
+          "image": "./assets/images/martnow-mark.png",
+          "imageWidth": 180
         }
       ],
       "expo-secure-store",

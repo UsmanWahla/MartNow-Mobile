@@ -10,17 +10,20 @@ import { Outfit_800ExtraBold } from '@expo-google-fonts/outfit/800ExtraBold';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StatusBar, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { LaunchSplash } from '@/components/shared/LaunchSplash';
 import { colors } from '@/constants/theme';
 import { AuthProvider } from '@/store/auth-context';
 import { FeedbackProvider } from '@/store/feedback-context';
 import { ShopProvider } from '@/store/shop-context';
 
 void SplashScreen.preventAutoHideAsync();
+
+const LAUNCH_SPLASH_MS = 1400;
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -34,12 +37,17 @@ export default function RootLayout() {
     IBMPlexSans_600SemiBold,
     IBMPlexSans_700Bold,
   });
+  const [introDone, setIntroDone] = useState(false);
+  const fontsReady = Boolean(fontsLoaded || fontError);
 
   useEffect(() => {
-    if (fontsLoaded || fontError) void SplashScreen.hideAsync();
-  }, [fontError, fontsLoaded]);
+    if (!fontsReady) return;
+    void SplashScreen.hideAsync();
+    const timer = setTimeout(() => setIntroDone(true), LAUNCH_SPLASH_MS);
+    return () => clearTimeout(timer);
+  }, [fontsReady]);
 
-  if (!fontsLoaded && !fontError) return null;
+  if (!fontsReady) return null;
 
   return (
     <GestureHandlerRootView style={styles.root}>
@@ -48,13 +56,17 @@ export default function RootLayout() {
         <FeedbackProvider>
           <AuthProvider>
             <ShopProvider>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  animation: 'slide_from_right',
-                  contentStyle: styles.screen,
-                }}
-              />
+              {introDone ? (
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    contentStyle: styles.screen,
+                  }}
+                />
+              ) : (
+                <LaunchSplash />
+              )}
             </ShopProvider>
           </AuthProvider>
         </FeedbackProvider>
